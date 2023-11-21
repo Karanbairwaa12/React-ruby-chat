@@ -206,31 +206,93 @@
 
 
 import React, { useState, useEffect } from 'react';
+import { AiOutlinePushpin } from "react-icons/ai";
+import ReactQuill from "react-quill";
 import ActionCable from 'actioncable';
 
 const cable = ActionCable.createConsumer('ws://localhost:3000/cable');
 
 const App = () => {
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const room =123
+  const [username, setUsername] = useState("")
+  // const [room, setRoom] = useState("")
+  const [showChat, setShowChat] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+  const [text, setText] = useState('');
+  const [messageList, setMessageList] = useState([])
+  const room = 123
+  const author = "karan"
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+
+      sendMessage(); // Call the sendMessage function only when Enter is pressed without Shift
+    }
+  };
+
+  const sendMessage = async () => {
+    if (text !== '') {
+      const messageData = {
+        room: room,
+        author: username,
+        message: text,
+      };
+
+      try {
+        console.log("sendddingg///////")
+        await cable.subscriptions.subscriptions[0].perform('send_message', messageData);
+        console.log(messageData)
+        // setMessageList((list) => [...list, messageData]);
+        setText('');
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  };
+  const handleChange = (value) => {
+    setText(value);
+  };
+
+  const modules = {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['clean'],
+    ],
+  };
+
+  const formats = [
+    'header',
+    'font',
+    'list',
+    'bold',
+    'italic',
+    'underline',
+    'link',
+    'image',
+  ];
+
+  const joinRoom =() => {
+    
+    // socket.emit("join_room",123)
+    setShowChat(true)
+}
   useEffect(() => {
     const channel = cable.subscriptions.create(
       { channel: 'MessagesChannel', room: room },
       {
         connected() {
           console.log(`Connected to Action Cable in room: ${room}`);
-          // Join the room when connected
           channel.perform('join_room', { room: room });
         },
         disconnected() {
           console.log('Disconnected from Action Cable');
-          // Leave the room when disconnected
           channel.perform('leave_room', { room: room });
         },
         received(data) {
-          console.log('Received data from Action Cable:', data);
-          setMessages((prevMessages) => [...prevMessages, data.content]);
+          console.log("this is data",data)
+          setMessageList((list) => [...list, data]);
         },
       }
     );
@@ -242,31 +304,109 @@ const App = () => {
     };
   }, [room]);
 
-  const sendMessage = () => {
-    cable.subscriptions.subscriptions[0].perform('send_message', { message: newMessage, room: '123' });
-    setNewMessage('');
-  };
+  // const sendMessage = () => {
+  //   cable.subscriptions.subscriptions[0].perform('send_message', { message: newMessage, room: '123', author: 'karan' });
+  //   setNewMessage('');
+  // };
 
   return (
-    <div>
-      <div>
-        {messages.map((message, index) => (
-          <>
-          {console.log(message)}
-          <div key={index}>{message}</div>
-          </>
+    // <div className='text-tahiti'>
+    //   <div>
+    //     {messages.map((message, index) => (
+    //       <>
+    //       {console.log(message)}
+    //       <div key={index}>{message}</div>
+    //       </>
           
-        ))}
+    //     ))}
+    //   </div>
+    //   <div>
+    //     <input
+    //       type="text"
+    //       value={newMessage}
+    //       onChange={(e) => setNewMessage(e.target.value)}
+    //     />
+    //     <button onClick={sendMessage}>Send</button>
+    //   </div>
+    // </div>
+    <>
+      <div className='w-[96%] h-full flex shadow[0px_0px_1px_0px_rgba(0, 0, 0, 0.15)]'>
+        <div className='w-full h-full flex'>
+        {
+        !showChat ? (
+          <div className="join-chat">
+            <h3>Join a Chat</h3>
+            <input
+            type="text"
+            placeholder="jhon...."
+            onChange={(event) => {
+              setUsername(event.target.value)
+            }}
+            onKeyPress={(event) => {
+              if (event.key === "Enter" || event.keyCode === 13) {
+                joinRoom();
+              }
+            }}
+            />
+            <button onClick={joinRoom}>Join</button>
+          </div>
+      
+          ): (
+            <div className={`w-full h-[48.625rem] flex flex-col justify-start items-start bg-[#fff] rounded-lg shadow-[0_0px_10px_0px] shadow-black/10`}>
+                <div className="w-full h-[4.5rem] p-5 flex justify-between items-center space-x-2 border-b-[1px] border-[#f3f3f3]">
+                  <div className="w-full flex space-x-2 cursor-pointer">
+                    <div className="w-full flex flex-col">
+                      <h4 className="text-[#191919]">{username}</h4>
+                      <h6 className="text-xs text-[#A1A1A1]">Active Now</h6>
+                    </div>
+                  </div>
+                  <div className="w-full h-full flex items-center justify-end">
+                    <button type="submit" className="w-[2.313rem] h-[2.313rem] flex items-center justify-center rounded-[30px] border border-[#f3f3f3]">
+                      <AiOutlinePushpin className="w-6 h-6"/>
+                    </button>
+                  </div>
+                </div>
+                <div className="h-2/4 overflow-y-scroll no-scrollbar display-none w-full" style={{display:"nonexo"}}>
+                  {
+                      messageList.map((item,i)=> {
+                        return (
+                          <div className={username === item.author ?"w-full flex justify-end items-center px-5":"w-full flex justify-start items-center px-5 "}
+                          >
+                            {/* {console.log("this is my items",item)}
+                            {console.log(messageList)} */}
+                            <div dangerouslySetInnerHTML={{__html:item.content}}/>
+                          </div>
+                        )
+                      })
+                      
+                    }
+                    <>
+                    {console.log(messageList)}
+                    </>
+                  </div>
+                  <div className="w-full p-5">
+                    <form>
+                      <textarea
+                        className="border border-black"
+                        name="message"
+                        value={text}
+                        onChange={(e) => handleChange(e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e)}
+                      />
+                      <button className="messageButton" type="submit">
+                        Send
+                      </button>
+                    </form>
+                  </div>
+            </div>
+          )
+        }
+       
+        
+        </div>
       </div>
-      <div>
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-        />
-        <button onClick={sendMessage}>Send</button>
-      </div>
-    </div>
+    </>
+    
   );
 };
 

@@ -13,7 +13,9 @@
 
 class Message < ApplicationRecord
   attribute :content, :string
+  attribute :author, :string  # Add this line to include the 'author' attribute
 
   validates :content, presence: true
   validates :room, presence: true
+  validates :author, presence: true  # Add this line to validate the presence of 'author'
 end

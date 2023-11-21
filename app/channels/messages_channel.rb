@@ -1,8 +1,6 @@
 class MessagesChannel < ApplicationCable::Channel
   def subscribed
     join_room(params[:room]) if params[:room].present?
-    # If you want to subscribe to a default room, uncomment the line below
-    # join_room('default_room') unless params[:room].present?
   end
 
   def unsubscribed
@@ -19,13 +17,14 @@ class MessagesChannel < ApplicationCable::Channel
   end
 
   def send_message(data)
-    permitted_data = ActionController::Parameters.new(data).permit(:message, :room)
-
-    message = Message.create!(content: permitted_data[:message], room: permitted_data[:room])
-    
-    ActionCable.server.broadcast("room_#{permitted_data[:room]}", { content: message.content, room: message.room })
+    permitted_data = ActionController::Parameters.new(data).permit(:message, :room, :author)
+  
+    message = Message.create!(content: permitted_data[:message], room: permitted_data[:room], author: permitted_data[:author])
+  
+    ActionCable.server.broadcast("room_#{permitted_data[:room]}", { content: message.content, room: message.room, author: message.author })
   end
 end
+
 #   def subscribed
 #     stream_from 'chat_channel'
 #   end
