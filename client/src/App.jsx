@@ -219,7 +219,7 @@ const App = () => {
   const [showProfile, setShowProfile] = useState(false)
   const [text, setText] = useState('');
   const [messageList, setMessageList] = useState([])
-  const room = 123
+  const [room, setRoom] = useState(null)
   const author = "karan"
 
   const handleKeyDown = (e) => {
@@ -341,6 +341,19 @@ const App = () => {
             placeholder="jhon...."
             onChange={(event) => {
               setUsername(event.target.value)
+            }}
+            onKeyPress={(event) => {
+              if (event.key === "Enter" || event.keyCode === 13) {
+                joinRoom();
+              }
+            }}
+            />
+            <input
+            type="text"
+            placeholder="room...."
+            value={room}
+            onChange={(event) => {
+              setRoom(event.target.value)
             }}
             onKeyPress={(event) => {
               if (event.key === "Enter" || event.keyCode === 13) {
